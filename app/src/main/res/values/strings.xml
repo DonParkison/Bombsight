@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Bombsight</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+
+    <string name="esrClientId">xRd0zfV2b9oOvrv9</string>
+    <string name="esriClientSecret">10d3bafb41ef423f86235a5663875044</string>
+    <string name="esriLicenceKey">runtimelite,1000,rud3608582096,none,JFB3LNBHPDG2RJE15033</string>
+
+</resources>
