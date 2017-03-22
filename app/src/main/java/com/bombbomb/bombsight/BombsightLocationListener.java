@@ -30,8 +30,7 @@ public class BombsightLocationListener implements LocationListener {
     @Override
     public void onLocationChanged(Location location) {
 
-        //Point rawPoint = new Point(location.getLatitude(), location.getLongitude(), SpatialReferences.getWebMercator());
-        Point rawPoint = new Point(location.getLongitude(), location.getLatitude(), SpatialReferences.getWebMercator());
+        Point rawPoint = new Point(location.getLongitude(), location.getLatitude(), SpatialReferences.getWgs84());
         this.callbacks.onLocationChanged(rawPoint);
     }
 

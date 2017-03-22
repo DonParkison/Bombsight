@@ -168,8 +168,8 @@ public class MainActivity extends AppCompatActivity
             currentLocationGraphic.setGeometry(locationPoint);
         }
 
-         //mapView.setViewpointCenterAsync(locationPoint, mapView.getMapScale());
-        mapView.setViewpointScaleAsync(100);
+         mapView.setViewpointCenterAsync(locationPoint, mapView.getMapScale());
+
 
     }
 }
