@@ -2,12 +2,13 @@ package com.bombbomb.bombsight;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -16,14 +17,13 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
-import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReference;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.Basemap;
-import com.esri.arcgisruntime.mapping.Viewpoint;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
 import com.esri.arcgisruntime.mapping.view.MapView;
@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity
     private SpatialReference webMercSpatRef;
     private Graphic currentLocationGraphic;
     private GraphicsOverlay locationGraphicsLayer;
+    private boolean gpsEngaged = false;
 
 
     @Override
@@ -70,6 +71,16 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
 
+                if (gpsEngaged){
+                    deactivateGps();
+                    gpsEngaged = false;
+                    view.setBackgroundColor(getResources().getColor(R.color.colorWhite));
+                } else {
+                    activateGps();
+                    gpsEngaged = true;
+                    view.setBackgroundColor(getResources().getColor(R.color.colorAccent));
+                }
+
 
             }
         });
@@ -88,10 +99,13 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
 
+        if (gpsEngaged)
+            activateGps();
+    }
+
+    private void activateGps() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
             PermissionsUtil.RequestPermission(this, PermissionsUtil.PERMISSIONS.LOCATION);
-
             return;
         }
 
@@ -103,8 +117,13 @@ public class MainActivity extends AppCompatActivity
     protected void onPause(){
         super.onPause();
 
-        locationManager.removeUpdates(locationListener);
+        gpsEngaged = false;
+        deactivateGps();
 
+    }
+
+    private void deactivateGps() {
+        locationManager.removeUpdates(locationListener);
     }
 
     @Override
