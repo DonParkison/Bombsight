@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:title="Showings">
+    <item android:title="Contacts">
+        <menu>
+            <item
+                android:id="@+id/select_contact"
+                android:title="Select Contact" />
+            <item
+                android:id="@+id/add_contact"
+                android:title="Add Contact" />
+        </menu>
+    </item>
+    <item android:title="Locations">
         <menu>
             <item
                 android:id="@+id/nav_showing_by_client"
@@ -13,14 +23,7 @@
                 android:title="Send" />
         </menu>
     </item>
-    <item android:title="Clients">
-        <menu>
-            <item
-                android:id="@+id/nav_client_list"
-                android:icon="@drawable/ic_menu_share"
-                android:title="Share" />
-        </menu>
-    </item>
+
     <item android:title="Basemaps">
         <menu>
             <item

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:paddingLeft="5dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_gravity="center">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:layout_gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="Street Address:"
+                android:layout_gravity="center_vertical" />
+
+            <EditText
+                android:id="@+id/add_street_address_editText"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:ems="10">
+            </EditText>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:layout_gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="Zip Code:"
+                android:layout_gravity="center_vertical" />
+
+
+            <EditText
+                android:id="@+id/add_zip_editText"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:inputType="number"
+                android:layout_weight="1"
+                android:ems="10">
+            </EditText>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/add_address_location_cancel_button"
+            android:layout_width="150dp"
+            android:layout_height="50dp"
+            android:layout_margin="2dp"
+            android:text="Cancel" />
+
+        <Button
+            android:id="@+id/add_address_location_save_button"
+            android:layout_width="150dp"
+            android:layout_height="50dp"
+            android:layout_margin="2dp"
+            android:text="Save" />
+
+    </LinearLayout>
+</LinearLayout>

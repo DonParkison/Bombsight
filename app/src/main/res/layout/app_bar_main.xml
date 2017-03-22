@@ -20,7 +20,8 @@
 
     </android.support.design.widget.AppBarLayout>
 
-    <include layout="@layout/content_main" />
+    <include layout="@layout/content_main"
+        android:id="@+id/include" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/zoom_to_location"
@@ -28,7 +29,23 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
+        android:background="@color/colorWhite"
         app:backgroundTint="@color/colorWhite"
-        app:srcCompat="@drawable/ic_dialog_gps" />
+        app:elevation="11dp"
+        app:srcCompat="@drawable/ic_display_gps" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/add_location"
+        android:layout_width="wrap_content"
+        android:layout_height="55dp"
+        android:layout_gravity="bottom|left"
+        android:layout_margin="@dimen/fab_margin"
+        android:background="@color/colorWhite"
+        android:paddingTop="@dimen/nav_header_height"
+        app:backgroundTint="@color/colorWhite"
+        app:elevation="10dp"
+        app:layout_anchor="@+id/include"
+        app:layout_anchorGravity="right|end"
+        app:srcCompat="@drawable/ic_display_location" />
 
 </android.support.design.widget.CoordinatorLayout>

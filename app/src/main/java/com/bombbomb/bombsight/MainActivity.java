@@ -2,13 +2,14 @@ package com.bombbomb.bombsight;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -17,33 +18,43 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 
+import com.bombbomb.bbapiproxy.Geocoding.GeocodeCallback;
+import com.bombbomb.bbapiproxy.Geocoding.GeocodeRequestor;
+import com.bombbomb.bbapiproxy.Geocoding.ResponseGeocodeObjects.AddressComponent;
+import com.bombbomb.bbapiproxy.Geocoding.ResponseGeocodeObjects.Geocode;
+import com.bombbomb.bbapiproxy.Geocoding.ResponseGeocodeObjects.Result;
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReference;
+import com.esri.arcgisruntime.geometry.SpatialReferences;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.Basemap;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
 import com.esri.arcgisruntime.mapping.view.MapView;
+import com.esri.arcgisruntime.symbology.PictureMarkerSymbol;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
+import com.esri.arcgisruntime.tasks.geocode.LocatorTask;
+
+import java.util.List;
 
 
-
-public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, BombsightLocListenerCallbacks {
-
-
-    private static final int WGS84WebMercaAS = 102100;
+public class MainActivity extends AppCompatActivity implements
+        NavigationView.OnNavigationItemSelectedListener,
+        BombsightLocListenerCallbacks,
+        AddAddressLocationDialog.AddAddressLocationCallbacks,
+        GeocodeCallback {
 
 
     private MapView mapView;
     private BombsightLocationListener locationListener;
     private LocationManager locationManager;
-    private SpatialReference webMercSpatRef;
     private Graphic currentLocationGraphic;
     private GraphicsOverlay locationGraphicsLayer;
+    private GraphicsOverlay geocodeLocationsGraphicsLayer;
+    private LocatorTask locatorTask;
+
     private boolean gpsEngaged = false;
 
 
@@ -61,7 +72,9 @@ public class MainActivity extends AppCompatActivity
         mapView.setMap(map);
 
         locationGraphicsLayer = new GraphicsOverlay();
+        geocodeLocationsGraphicsLayer = new GraphicsOverlay();
         mapView.getGraphicsOverlays().add(0, locationGraphicsLayer);
+        mapView.getGraphicsOverlays().add(1, geocodeLocationsGraphicsLayer);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -71,15 +84,16 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
 
-                if (gpsEngaged){
-                    deactivateGps();
-                    gpsEngaged = false;
-                    view.setBackgroundColor(getResources().getColor(R.color.colorWhite));
-                } else {
-                    activateGps();
-                    gpsEngaged = true;
-                    view.setBackgroundColor(getResources().getColor(R.color.colorAccent));
-                }
+                toggleGpsState(view);
+            }
+        });
+
+        FloatingActionButton addAddress = (FloatingActionButton) findViewById(R.id.add_location);
+        addAddress.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                addAddress();
 
 
             }
@@ -93,6 +107,135 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+    }
+
+    private void addAddress(){
+        AddAddressLocationDialog dialog = new AddAddressLocationDialog(this, this);
+        this.runOnUiThread(dialog);
+}
+
+
+    public void OnAddressLocationSaveClicked(String address, String zipCode){
+
+
+        try {
+            GeocodeRequestor requestor = new GeocodeRequestor(this, this);
+            requestor.executeGetGeocode(address, zipCode);
+        } catch (Exception ex){
+            String message = ex.getMessage();
+        }
+    }
+
+    @Override
+    public void geocodeReturned(Geocode geocode) {
+
+        FloatingActionButton zoomToLocation = (FloatingActionButton) findViewById(R.id.zoom_to_location);
+        deactivateGps();
+        gpsEngaged = false;
+        zoomToLocation.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorWhite)));
+
+
+        BombsightLocation bsLocation = buildBsLocationFromGeocode(geocode);
+
+        // Write location to the database
+
+        // add location to the map
+
+        SimpleMarkerSymbol locationMarker = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, 0xffff0000, 10f);
+        BitmapDrawable picture = (BitmapDrawable)getDrawable(R.drawable.ic_map_location);
+        PictureMarkerSymbol pictureMarkerSymbol = new PictureMarkerSymbol(picture);
+
+        Point geocodePoint = new Point(bsLocation.longitude, bsLocation.latitude, SpatialReferences.getWgs84());
+
+            Graphic geocodeLoc = new Graphic(geocodePoint, pictureMarkerSymbol);
+            locationGraphicsLayer.getGraphics().add(0, geocodeLoc);
+
+
+        mapView.setViewpointCenterAsync(geocodePoint, 4000);
+
+
+    }
+
+    public BombsightLocation buildBsLocationFromGeocode(Geocode geocode){
+
+        BombsightLocation bsLocation = new BombsightLocation();
+        List<Result> results = geocode.getResults();
+
+        for (Result result : results){
+            bsLocation.formattedAddress = result.getFormattedAddress();
+
+            bsLocation.latitude = result.getGeometry().getLocation().getLat();
+            bsLocation.longitude = result.getGeometry().getLocation().getLng();
+
+            List<AddressComponent> components = result.getAddressComponents();
+
+            for (AddressComponent component : components){
+
+                List<String> types = component.getTypes();
+
+                for (String type : types){
+
+                    if (type.equalsIgnoreCase("street_number")){
+                        bsLocation.streetNumber = component.getShortName();
+                        break;
+                    }
+                    if (type.equalsIgnoreCase("route")){
+                        bsLocation.route = component.getShortName();
+                        break;
+                    }
+                    if (type.equalsIgnoreCase("neighborhood")){
+                        bsLocation.neighborhood = component.getShortName();
+                        break;
+                    }
+                    if (type.equalsIgnoreCase("postal_code")){
+                        bsLocation.postCode = component.getShortName();
+                        break;
+                    }
+                    if (type.equalsIgnoreCase("postal_code_suffix")){
+                        bsLocation.postCodeSuffix = component.getShortName();
+                        break;
+                    }
+                    if (type.equalsIgnoreCase("locality")){
+                        bsLocation.city = component.getShortName();
+                        break;
+                    }
+                    if (type.equalsIgnoreCase("administrative_area_level_2")){
+                        bsLocation.county = component.getShortName();
+                        break;
+                    }
+                    if (type.equalsIgnoreCase("administrative_area_level_1")){
+                        bsLocation.state = component.getLongName();
+                        break;
+                    }
+                    if (type.equalsIgnoreCase("country")){
+                        bsLocation.country = component.getLongName();
+                        break;
+                    }
+                }
+
+
+            }
+
+
+        }
+
+        return bsLocation;
+
+    }
+
+
+
+
+    private void toggleGpsState(View view) {
+        if (gpsEngaged){
+            deactivateGps();
+            gpsEngaged = false;
+            view.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorWhite)));
+        } else {
+            activateGps();
+            gpsEngaged = true;
+            view.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorAccent)));
+        }
     }
 
     @Override
@@ -124,6 +267,16 @@ public class MainActivity extends AppCompatActivity
 
     private void deactivateGps() {
         locationManager.removeUpdates(locationListener);
+
+        try {
+            if (locationGraphicsLayer != null) {
+                if (locationGraphicsLayer.getGraphics() != null && locationGraphicsLayer.getGraphics().size() > 0) {
+                    locationGraphicsLayer.getGraphics().remove(0);
+                    currentLocationGraphic = null;
+                }
+            }
+        } catch (Exception ex){
+        }
     }
 
     @Override
@@ -164,11 +317,6 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-//        if (id == R.id.nav_share) {
-//
-//        } else if (id == R.id.nav_send) {
-//
-//        }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -191,4 +339,6 @@ public class MainActivity extends AppCompatActivity
 
 
     }
+
+
 }

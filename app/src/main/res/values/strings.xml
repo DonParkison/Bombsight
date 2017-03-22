@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Bombsight</string>
+    <string name="app_name">Bomb Sight</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
@@ -9,5 +9,13 @@
     <string name="esrClientId">xRd0zfV2b9oOvrv9</string>
     <string name="esriClientSecret">10d3bafb41ef423f86235a5663875044</string>
     <string name="esriLicenceKey">runtimelite,1000,rud3608582096,none,JFB3LNBHPDG2RJE15033</string>
+
+
+    <string name="googleApiKey">AIzaSyD8IsdoWaNtw-LO8gf6VNJoXIyocQV_PmY</string>
+
+    <string name="location_table_create_script">
+        CREATE TABLE LOCATION (ID INTEGER PRIMARY KEY, LAT DECIMAL, LON DOUBLE, TYPE INTEGER, FORMATTED_ADDRESS VARCHAR (255), STREET_NUMBER VARCHAR (255), ROUTE VARCHAR (255), NEIGHBORHOOD VARCHAR (255), POSTAL_CODE VARCHAR (255), POSTAL_CODE_SUFFIX VARCHAR (255), CITY VARCHAR (255), COUNTY VARCHAR (255), STATE VARCHAR (255), COUNTRY VARCHAR (255));
+        COMMIT TRANSACTION;
+    </string>
 
 </resources>
