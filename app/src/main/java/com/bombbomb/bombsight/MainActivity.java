@@ -28,11 +28,19 @@ import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReference;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
+import com.esri.arcgisruntime.layers.Layer;
+import com.esri.arcgisruntime.loadable.LoadStatus;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.Basemap;
+import com.esri.arcgisruntime.mapping.LayerList;
+import com.esri.arcgisruntime.mapping.Viewpoint;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
 import com.esri.arcgisruntime.mapping.view.MapView;
+import com.esri.arcgisruntime.portal.Portal;
+import com.esri.arcgisruntime.portal.PortalItem;
+import com.esri.arcgisruntime.security.AuthenticationManager;
+import com.esri.arcgisruntime.security.DefaultAuthenticationChallengeHandler;
 import com.esri.arcgisruntime.symbology.PictureMarkerSymbol;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import com.esri.arcgisruntime.tasks.geocode.LocatorTask;
@@ -54,6 +62,10 @@ public class MainActivity extends AppCompatActivity implements
     private GraphicsOverlay locationGraphicsLayer;
     private GraphicsOverlay geocodeLocationsGraphicsLayer;
     private LocatorTask locatorTask;
+    private Portal portal;
+
+    public boolean portalLoaded = false;
+    public boolean mapLaded = false;
 
     private boolean gpsEngaged = false;
 
@@ -67,14 +79,26 @@ public class MainActivity extends AppCompatActivity implements
 
         ArcGISRuntimeEnvironment.setLicense(this.getString(R.string.esriLicenceKey));
 
-        this.mapView = (MapView) findViewById(R.id.mapView);
-        ArcGISMap map = new ArcGISMap(Basemap.Type.TOPOGRAPHIC, 38.832689, -104.825886, 14);
-        mapView.setMap(map);
 
-        locationGraphicsLayer = new GraphicsOverlay();
-        geocodeLocationsGraphicsLayer = new GraphicsOverlay();
-        mapView.getGraphicsOverlays().add(0, locationGraphicsLayer);
-        mapView.getGraphicsOverlays().add(1, geocodeLocationsGraphicsLayer);
+        DefaultAuthenticationChallengeHandler handler = new DefaultAuthenticationChallengeHandler(this);
+        AuthenticationManager.setAuthenticationChallengeHandler(handler);
+        //portal = new Portal("http://www.arcgis.com", true);
+        portal = new Portal("http://dlparkisongmail.maps.arcgis.com", true);
+
+        portal.addDoneLoadingListener(new Runnable() {
+            @Override
+            public void run() {
+                if (portal.getLoadStatus() == LoadStatus.LOADED){
+                    portalLoaded = true;
+                    loadMapData();
+                }
+            }
+        });
+
+        portal.loadAsync();
+
+
+
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -107,6 +131,50 @@ public class MainActivity extends AppCompatActivity implements
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+    }
+
+    public void loadMapData(){
+
+        if (portalLoaded) {
+
+            PortalItem portalItem = new PortalItem(this.portal, this.getString(R.string.esriMapId));
+
+            this.mapView = (MapView) findViewById(R.id.mapView);
+            //ArcGISMap map = new ArcGISMap(Basemap.Type.TOPOGRAPHIC, 38.832689, -104.825886, 14);
+            Basemap basemap = new Basemap(portalItem);
+            Viewpoint viewpoint = new Viewpoint( 38.832689, -104.825886, 25000);
+            ArcGISMap map = new ArcGISMap(this.getString(R.string.esriWebMap));
+
+            map.addDoneLoadingListener(new Runnable() {
+                @Override
+                public void run() {
+
+                    mapLaded = true;
+                    LayerList layerList = mapView.getMap().getOperationalLayers();
+
+                    for (int i = 0; i < layerList.size(); i++){
+
+                        Layer layer = layerList.get(i);
+
+                        String layerName = layer.getName();
+                        String description = layer.getDescription();
+
+                    }
+                }
+            });
+
+            map.setInitialViewpoint(viewpoint);
+            mapView.setMap(map);
+
+            locationGraphicsLayer = new GraphicsOverlay();
+            geocodeLocationsGraphicsLayer = new GraphicsOverlay();
+            mapView.getGraphicsOverlays().add(0, locationGraphicsLayer);
+            mapView.getGraphicsOverlays().add(1, geocodeLocationsGraphicsLayer);
+
+
+
+
+        }
     }
 
     private void addAddress(){

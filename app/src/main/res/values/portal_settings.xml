@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- OAuth Portals -->
+    <string-array name="portal">
+        <item name="title">DonsPortal</item>
+        <!-- your account URL path-->
+        <item name="url">http://dlparkisongmail.maps.arcgis.com</item>
+        <!-- Client ID of your registered application-->
+        <item name="client_id">xRd0zfV2b9oOvrv9</item>
+        <!-- Redirect URI of the application from Authentication tab-->
+        <item name="redirect_uri">BombSight://auth</item>
+        <item name="username">dlparkison@gmail.com</item>
+        <item name="password"></item>
+    </string-array>
+</resources>

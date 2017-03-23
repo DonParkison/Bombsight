@@ -9,6 +9,10 @@
     <string name="esrClientId">xRd0zfV2b9oOvrv9</string>
     <string name="esriClientSecret">10d3bafb41ef423f86235a5663875044</string>
     <string name="esriLicenceKey">runtimelite,1000,rud3608582096,none,JFB3LNBHPDG2RJE15033</string>
+    <!--<string name="esriPortal">http://dlparkisongmail.maps.arcgis.com</string>-->
+    <string name="esriPortal">http://www.arcgis.com</string>
+    <string name="esriMapId">52e8dba5bbe042a0874ee3aac5cc2ffd</string>
+    <string name="esriWebMap">http://www.arcgis.com/home/item.html?id=52e8dba5bbe042a0874ee3aac5cc2ffd</string>
 
 
     <string name="googleApiKey">AIzaSyD8IsdoWaNtw-LO8gf6VNJoXIyocQV_PmY</string>
@@ -17,5 +21,7 @@
         CREATE TABLE LOCATION (ID INTEGER PRIMARY KEY, LAT DECIMAL, LON DOUBLE, TYPE INTEGER, FORMATTED_ADDRESS VARCHAR (255), STREET_NUMBER VARCHAR (255), ROUTE VARCHAR (255), NEIGHBORHOOD VARCHAR (255), POSTAL_CODE VARCHAR (255), POSTAL_CODE_SUFFIX VARCHAR (255), CITY VARCHAR (255), COUNTY VARCHAR (255), STATE VARCHAR (255), COUNTRY VARCHAR (255));
         COMMIT TRANSACTION;
     </string>
+
+    <string name="world_topo_service">http://services.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer</string>
 
 </resources>
