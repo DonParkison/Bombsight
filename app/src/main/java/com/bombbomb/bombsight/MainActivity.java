@@ -7,6 +7,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -45,7 +46,10 @@ import com.esri.arcgisruntime.symbology.PictureMarkerSymbol;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import com.esri.arcgisruntime.tasks.geocode.LocatorTask;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -150,16 +154,9 @@ public class MainActivity extends AppCompatActivity implements
                 public void run() {
 
                     mapLaded = true;
-                    LayerList layerList = mapView.getMap().getOperationalLayers();
 
-                    for (int i = 0; i < layerList.size(); i++){
+                    loadExistingLocations();
 
-                        Layer layer = layerList.get(i);
-
-                        String layerName = layer.getName();
-                        String description = layer.getDescription();
-
-                    }
                 }
             });
 
@@ -175,6 +172,23 @@ public class MainActivity extends AppCompatActivity implements
 
 
         }
+    }
+
+    private void loadExistingLocations(){
+
+        Map<Integer, BombsightLocation> locations = BombsightDbHelper.getInstance(this).getAllLocations();
+
+        Iterator iterator = locations.entrySet().iterator();
+        while (iterator.hasNext()){
+            Map.Entry pair = (Map.Entry)iterator.next();
+
+            BombsightLocation location = (BombsightLocation)pair.getValue();
+            Point geocodePoint = addBsLocationToMap(location);
+
+        }
+
+
+
     }
 
     private void addAddress(){
@@ -206,22 +220,34 @@ public class MainActivity extends AppCompatActivity implements
         BombsightLocation bsLocation = buildBsLocationFromGeocode(geocode);
 
         // Write location to the database
+        BombsightLocation bsLocationWithId = BombsightDbHelper.getInstance(this).addOrUpdateLocation(bsLocation);
 
         // add location to the map
 
-        SimpleMarkerSymbol locationMarker = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, 0xffff0000, 10f);
-        BitmapDrawable picture = (BitmapDrawable)getDrawable(R.drawable.ic_map_location);
-        PictureMarkerSymbol pictureMarkerSymbol = new PictureMarkerSymbol(picture);
-
-        Point geocodePoint = new Point(bsLocation.longitude, bsLocation.latitude, SpatialReferences.getWgs84());
-
-            Graphic geocodeLoc = new Graphic(geocodePoint, pictureMarkerSymbol);
-            locationGraphicsLayer.getGraphics().add(0, geocodeLoc);
-
-
+        Point geocodePoint = addBsLocationToMap(bsLocationWithId);
         mapView.setViewpointCenterAsync(geocodePoint, 4000);
 
 
+    }
+
+    @NonNull
+    private Point addBsLocationToMap(BombsightLocation bsLocationWithId) {
+        Point geocodePoint = null;
+        try {
+            SimpleMarkerSymbol locationMarker = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, 0xffff0000, 10f);
+            BitmapDrawable picture = (BitmapDrawable) getDrawable(R.drawable.ic_map_location);
+            PictureMarkerSymbol pictureMarkerSymbol = new PictureMarkerSymbol(picture);
+
+            geocodePoint = new Point(bsLocationWithId.longitude, bsLocationWithId.latitude, SpatialReferences.getWgs84());
+            Graphic geocodeLoc = new Graphic(geocodePoint, pictureMarkerSymbol);
+
+
+            locationGraphicsLayer.getGraphics().add(0, geocodeLoc);
+        } catch (Exception ex){
+            String message = ex.getMessage();
+        }
+
+        return geocodePoint;
     }
 
     public BombsightLocation buildBsLocationFromGeocode(Geocode geocode){
