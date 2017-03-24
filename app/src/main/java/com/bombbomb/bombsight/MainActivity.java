@@ -1,6 +1,7 @@
 package com.bombbomb.bombsight;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.BitmapDrawable;
@@ -11,6 +12,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -18,7 +20,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import com.bombbomb.bbapiproxy.Geocoding.GeocodeCallback;
 import com.bombbomb.bbapiproxy.Geocoding.GeocodeRequestor;
@@ -26,6 +30,7 @@ import com.bombbomb.bbapiproxy.Geocoding.ResponseGeocodeObjects.AddressComponent
 import com.bombbomb.bbapiproxy.Geocoding.ResponseGeocodeObjects.Geocode;
 import com.bombbomb.bbapiproxy.Geocoding.ResponseGeocodeObjects.Result;
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
+import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReference;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
@@ -35,8 +40,11 @@ import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.Basemap;
 import com.esri.arcgisruntime.mapping.LayerList;
 import com.esri.arcgisruntime.mapping.Viewpoint;
+import com.esri.arcgisruntime.mapping.popup.Popup;
+import com.esri.arcgisruntime.mapping.view.DefaultMapViewOnTouchListener;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
+import com.esri.arcgisruntime.mapping.view.IdentifyGraphicsOverlayResult;
 import com.esri.arcgisruntime.mapping.view.MapView;
 import com.esri.arcgisruntime.portal.Portal;
 import com.esri.arcgisruntime.portal.PortalItem;
@@ -50,6 +58,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -169,8 +178,8 @@ public class MainActivity extends AppCompatActivity implements
             mapView.getGraphicsOverlays().add(1, geocodeLocationsGraphicsLayer);
 
 
-
-
+            MapViewTouchListener mMapViewTouchListener = new MapViewTouchListener(this, mapView);
+            mapView.setOnTouchListener(mMapViewTouchListener);
         }
     }
 
@@ -183,8 +192,11 @@ public class MainActivity extends AppCompatActivity implements
             Map.Entry pair = (Map.Entry)iterator.next();
 
             BombsightLocation location = (BombsightLocation)pair.getValue();
-            Point geocodePoint = addBsLocationToMap(location);
+            addBsLocationToMap(location);
 
+            NavigationView navView = (NavigationView) findViewById(R.id.nav_view);
+            Menu menu = navView.getMenu();
+            menu.add(R.id.location_menu, location.id, Menu.NONE, location.formattedAddress);
         }
 
 
@@ -227,6 +239,9 @@ public class MainActivity extends AppCompatActivity implements
         Point geocodePoint = addBsLocationToMap(bsLocationWithId);
         mapView.setViewpointCenterAsync(geocodePoint, 4000);
 
+        NavigationView navView = (NavigationView) findViewById(R.id.nav_view);
+        Menu menu = navView.getMenu();
+        menu.add(R.id.location_menu, bsLocationWithId.id, Menu.NONE, bsLocationWithId.formattedAddress);
 
     }
 
@@ -242,7 +257,10 @@ public class MainActivity extends AppCompatActivity implements
             Graphic geocodeLoc = new Graphic(geocodePoint, pictureMarkerSymbol);
 
 
-            locationGraphicsLayer.getGraphics().add(0, geocodeLoc);
+            //geocodeLoc.
+
+
+            geocodeLocationsGraphicsLayer.getGraphics().add(0, geocodeLoc);
         } catch (Exception ex){
             String message = ex.getMessage();
         }
@@ -318,8 +336,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
-
-
     private void toggleGpsState(View view) {
         if (gpsEngaged){
             deactivateGps();
@@ -330,14 +346,6 @@ public class MainActivity extends AppCompatActivity implements
             gpsEngaged = true;
             view.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorAccent)));
         }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        if (gpsEngaged)
-            activateGps();
     }
 
     private void activateGps() {
@@ -358,6 +366,16 @@ public class MainActivity extends AppCompatActivity implements
         deactivateGps();
 
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (gpsEngaged)
+            activateGps();
+    }
+
+
 
     private void deactivateGps() {
         locationManager.removeUpdates(locationListener);
@@ -410,10 +428,10 @@ public class MainActivity extends AppCompatActivity implements
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
-
+        item.setChecked(true);
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+        //drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
@@ -435,4 +453,64 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
+
+
+    class MapViewTouchListener extends DefaultMapViewOnTouchListener {
+
+        /**
+         * Constructs a DefaultMapViewOnTouchListener with the specified Context and MapView.
+         *
+         * @param context the context from which this is being created
+         * @param mapView the MapView with which to interact
+         */
+        public MapViewTouchListener(Context context, MapView mapView){
+            super(context, mapView);
+        }
+
+        /**
+         * Override the onSingleTapConfirmed gesture to handle tapping on the MapView
+         * and detected if the Graphic was selected.
+         * @param e the motion event
+         * @return true if the listener has consumed the event; false otherwise
+         */
+        @Override
+        public boolean onSingleTapConfirmed(MotionEvent e) {
+
+
+
+            // get the screen point where user tapped
+            android.graphics.Point screenPoint = new android.graphics.Point((int)e.getX(), (int)e.getY());
+
+
+
+            // identify graphics on the graphics overlay
+            final ListenableFuture<IdentifyGraphicsOverlayResult> identifyGraphic = mMapView.identifyGraphicsOverlayAsync(geocodeLocationsGraphicsLayer, screenPoint, 50, false, 2);
+
+            identifyGraphic.addDoneListener(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        IdentifyGraphicsOverlayResult grOverlayResult = identifyGraphic.get();
+                        // get the list of graphics returned by identify graphic overlay
+                        List<Graphic> graphic = grOverlayResult.getGraphics();
+                        // get size of list in results
+                        int identifyResultSize = graphic.size();
+                        if(!graphic.isEmpty()){
+
+
+
+                            // show a toast message if graphic was returned
+                            Toast.makeText(getApplicationContext(), "Tapped on " + identifyResultSize + " Graphic", Toast.LENGTH_SHORT).show();
+                        }
+                    }catch(InterruptedException | ExecutionException ie){
+                        ie.printStackTrace();
+                    }
+
+                }
+            });
+
+            return super.onSingleTapConfirmed(e);
+        }
+
+    }
 }

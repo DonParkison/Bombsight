@@ -3,25 +3,11 @@
 
     <item android:title="Locations">
         <menu>
+            <group
+                android:id="@+id/location_menu"
+                android:checkableBehavior="single">
+            </group>
 
-        </menu>
-    </item>
-    <item android:title="Location Data">
-        <menu>
-
-        </menu>
-    </item>
-
-    <item android:title="Basemaps">
-        <menu>
-            <item
-                android:id="@+id/nav_basemap_one"
-                android:icon="@drawable/ic_menu_share"
-                android:title="Share" />
-            <item
-                android:id="@+id/nav_basemap_two"
-                android:icon="@drawable/ic_menu_send"
-                android:title="Send" />
         </menu>
     </item>
 
